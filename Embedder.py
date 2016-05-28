@@ -2,23 +2,26 @@ from PIL import Image
 import random
 
 # Level of redundancy
-NUMBER_OF_PASSES = 10
+NUMBER_OF_PASSES = 8
 
-# Change private key as required
-PRIVATE_KEY = 1234
-random.seed(PRIVATE_KEY)
+# Change key as required
+KEY = 1234
+random.seed(KEY)
+
+# Level of clarity
+shift = 2
+bits = (1<<shift)-1
 
 # Load the carrier and biometric images
 carrierFile = Image.open("./Carrier.png")
 biometricFile = Image.open("./FingerPrint.png")
 carrierPix = carrierFile.load()
-bufferPix = carrierFile.copy().load()
 biometricPix = biometricFile.load()
 
 # Hide data in LSB of a channel (RGBA)
 def hideData(rgba,val,channel):
     rgba = list(rgba)
-    rgba[channel] = ((rgba[channel]>>1)<<1) + val
+    rgba[channel] = ((rgba[channel]>>bits)<<bits) + val
     return tuple(rgba)
 
 # One iteration of the stenography
@@ -28,7 +31,7 @@ def runPass(channel):
             x = random.randint(0,carrierFile.size[0]-1)
             y = random.randint(0,carrierFile.size[1]-1)
             carrierPix[x,y] = hideData(carrierPix[x,y],
-                                       biometricPix[i,j][0]//255,
+                                       biometricPix[i,j][0]>>(8-(shift)),
                                        channel)   
 
 
