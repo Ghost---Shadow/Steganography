@@ -5,7 +5,6 @@ class Embedder:
     def __init__(self,passes,key,channels,shift):
         self.NUMBER_OF_PASSES = passes
         self.KEY = key
-        random.seed(self.KEY)
         self.CHANNELS = channels
         self.shift = shift
         self.bits = (1<<self.shift)-1
@@ -16,6 +15,9 @@ class Embedder:
         biometricFile = Image.open(biometric)
         carrierPix = carrierFile.load()
         biometricPix = biometricFile.load()
+
+        # Seed the PRG
+        random.seed(self.KEY)
 
         # Hide data in LSB of a channel (RGBA)
         def hideData(rgba,val,channel):
@@ -40,7 +42,7 @@ class Embedder:
 
         # Save output
         carrierFile.save(output)
-        carrierFile.show()
+        #carrierFile.show()
 
         # Close all open files
         carrierFile.close()

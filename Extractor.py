@@ -5,8 +5,7 @@ import random
 class Extractor:
     def __init__(self,passes,key,channels,shift,N):
         self.NUMBER_OF_PASSES = passes
-        self.KEY = key
-        random.seed(self.KEY)
+        self.KEY = key        
         self.CHANNELS = channels
         self.shift = shift
         self.bits = (1<<self.shift)-1
@@ -22,6 +21,9 @@ class Extractor:
         hiddenPix = hiddenFile.load()
         extractedFile = Image.new("RGB",(self.N,self.N),"white")
         extractedPix = extractedFile.load()
+
+        # Seed the PRG
+        random.seed(self.KEY)
 
         # Check if pixel is within bounds
         def withinBounds(x,y):
@@ -63,5 +65,5 @@ class Extractor:
         # Close files
         hiddenFile.close()
         extractedFile.save(outputPath)
-        extractedFile.show()
+        #extractedFile.show()
         extractedFile.close()
