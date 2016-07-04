@@ -1,62 +1,59 @@
 from PIL import Image
 import random
-from collections import Counter
+#from collections import Counter
 
-# Level of redundancy
-NUMBER_OF_PASSES = 8
+class Extractor:
+    def __init__(self,passes,key,channels,shift,N):
+        self.NUMBER_OF_PASSES = passes
+        self.KEY = key
+        random.seed(self.KEY)
+        self.CHANNELS = channels
+        self.shift = shift
+        self.bits = (1<<self.shift)-1
+        self.N = N
 
-# Change key as required
-KEY = 1234
-random.seed(KEY)
+        # Save the votes
+        self.votes = [[[] for i in range(self.N)] for j in range(self.N)]
+            
+    def extract(self,inputPath,outputPath):
+        # Load the image
+        hiddenFile = Image.open(inputPath)
+        hiddenPix = hiddenFile.load()
+        extractedFile = Image.new("RGB",(self.N,self.N),"white")
+        extractedPix = extractedFile.load()
 
-# Level of clarity
-shift = 2
-bits = (1<<shift)-1
+        # Load data hidden in LSB of a channel (RGBA)
+        def getData(x,y,channel):
+            rgba = list(hiddenPix[x,y])
+            val = (rgba[channel] & self.bits) << (8-self.shift)
+            return val
 
-# Fingerprint dimension
-N = 128
+        # One iteration of the stenography
+        def runPass(channel):
+            for i in range(self.N):
+                for j in range(self.N):
+                    x = random.randint(0,hiddenFile.size[0]-1)
+                    y = random.randint(0,hiddenFile.size[1]-1)
+                    #extractedPix[i,j] = getData(x,y,channel)
+                    self.votes[i][j].append(getData(x,y,channel))      
 
-# Save the votes
-votes = [[[] for i in range(N)] for j in range(N)]
+        # Run multiple passes
+        for i in range(self.NUMBER_OF_PASSES):
+            runPass(i % self.CHANNELS)
 
-# Load the image
-hiddenFile = Image.open("./output.png")
-hiddenPix = hiddenFile.load()
-extractedFile = Image.new("RGB",(N,N),"white")
-extractedPix = extractedFile.load()
+        # Resolve a vote
+        def majorityVote(a):
+            #return Counter(v).most_common(1)[0][0]
+            return max(map(lambda val: (a.count(val), val), set(a)))[1]
 
-# Load data hidden in LSB of a channel (RGBA)
-def getData(x,y,channel):
-    rgba = list(hiddenPix[x,y])
-    val = (rgba[channel] & bits) << (8-shift)
-    return val
+        # Resolve all votes
+        for i in range(self.N):
+            for j in range(self.N):
+                pixel = majorityVote(self.votes[i][j])
+                extractedPix[i,j] = (pixel,)*self.CHANNELS
 
-# One iteration of the stenography
-def runPass(channel):
-    for i in range(N):
-        for j in range(N):
-            x = random.randint(0,hiddenFile.size[0]-1)
-            y = random.randint(0,hiddenFile.size[1]-1)
-            #extractedPix[i,j] = getData(x,y,channel)
-            votes[i][j].append(getData(x,y,channel))      
-
-# Run multiple passes
-for i in range(NUMBER_OF_PASSES):
-    runPass(i%4)
-
-# Resolve a vote
-def majorityVote(a):
-    #return Counter(v).most_common(1)[0][0]
-    return max(map(lambda val: (a.count(val), val), set(a)))[1]
-
-# Resolve all votes
-for i in range(N):
-    for j in range(N):
-        pixel = majorityVote(votes[i][j])
-        extractedPix[i,j] = (pixel,)*3
-
-# Close files
-hiddenFile.close()
-extractedFile.save("extract.png")
-extractedFile.show()
-extractedFile.close()
+        # Close files
+        hiddenFile.close()
+        extractedFile.save(outputPath)
+        extractedFile.show()
+        extractedFile.close()
