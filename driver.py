@@ -5,13 +5,13 @@ from extractor import Extractor
 CARRIER = "./Carrier.png"
 BIOMETRIC = "./FingerPrint.png"
 EMBEDDED = "./Output.png"
-EXTRACTED = "./Extract.png"
+EXTRACTED = "./Tests/Extract"
 
 # Number of channels (RGBA)
 CHANNELS = 4
 
 # Level of redundancy
-NUMBER_OF_PASSES = 8
+NUMBER_OF_PASSES = 32
 
 # Change key as required
 KEY = 1234
@@ -28,7 +28,14 @@ embedObject.embed(BIOMETRIC,CARRIER,EMBEDDED)
 
 # Extract the biometric from the file EMBEDDED
 extractObject = Extractor(NUMBER_OF_PASSES,KEY,CHANNELS,shift,N)
-extractObject.extract(EMBEDDED,EXTRACTED)
+#extractObject.extract(EMBEDDED,EXTRACTED)
+
+# Testing
+crop = (0,0,310,190)
+extractObject.extract(EMBEDDED,crop,EXTRACTED+"_UpperLeftQuad.png")
+
+crop = (310,190,620,387)
+extractObject.extract(EMBEDDED,crop,EXTRACTED+"_LowerRightQuad.png")
 
 print("Done")
 
