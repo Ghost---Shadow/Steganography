@@ -45,9 +45,9 @@ for i in range(NUMBER_OF_PASSES):
     runPass(i%4)
 
 # Resolve a vote
-def majorityVote(v):
-    v = Counter(v)
-    return v.most_common(1)[0][0]
+def majorityVote(a):
+    #return Counter(v).most_common(1)[0][0]
+    return max(map(lambda val: (a.count(val), val), set(a)))[1]
 
 # Resolve all votes
 for i in range(N):
