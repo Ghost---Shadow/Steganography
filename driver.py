@@ -13,10 +13,10 @@ EMBEDDED = "./Output.png"
 EXTRACTED = "./Tests/Ex"
 
 # Number of channels (RGBA)
-CHANNELS = 4
+CHANNELS = 3
 
 # Level of redundancy
-NUMBER_OF_PASSES = 4
+NUMBER_OF_PASSES = 32
 
 # Change key as required
 KEY = 1234
