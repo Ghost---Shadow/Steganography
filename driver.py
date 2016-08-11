@@ -1,5 +1,7 @@
-from embedder import Embedder
-from extractor import Extractor
+#!/usr/bin/env python3
+
+from mypackage.embedder import Embedder
+from mypackage.extractor import Extractor
 
 import random
 import time
@@ -7,13 +9,13 @@ import time
 current_milli_time = lambda: int(round(time.time() * 1000))
 
 # File names
-CARRIER = "./Carrier.png"
+CARRIER = "./Carrier.jpg"
 BIOMETRIC = "./FingerPrint.png"
-EMBEDDED = "./Output.png"
-EXTRACTED = "./Tests/Ex"
+EMBEDDED = "./Output.jpg"
+EXTRACTED = "./Tests_JPG/Ex"
 
 # Number of channels (RGBA)
-CHANNELS = 3
+CHANNELS = 3 # does nothing if file is .jpg
 
 # Level of redundancy
 NUMBER_OF_PASSES = 32
