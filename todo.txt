@@ -1,3 +1,0 @@
-integer dct
-literature survey
-stochastic
