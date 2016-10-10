@@ -1,81 +1,128 @@
-#!/usr/bin/env python3
-
-from PIL import Image
+import cv2
+import numpy as np
 import random
-#from collections import Counter
 
 class Extractor:
-    def __init__(self,passes,key,channels,shift,N):
+    def __init__(self,passes,key,mask,shift,logging = False):
         self.NUMBER_OF_PASSES = passes
-        self.KEY = key        
-        self.CHANNELS = channels
-        self.shift = shift
-        self.bits = (1<<self.shift)-1
-        self.N = N
-        self.BLANK_PIXEL = 1 << 8
-        self.offset = 0
+        self.KEY = key
+        self.MASK = mask
+        self.SHIFT = shift
+        self.logging = logging
 
-        # Save the votes
-        self.votes = [[[] for i in range(self.N)] for j in range(self.N)]
+    def extract(self,embedded,CORNERS,ACTUAL_SIZE,BIOMETRIC_SIZE):
+        # Extract number of channels
+        self.CHANNELS = embedded.shape[2]
 
-    def extract(self,inputPath,crop,outputPath):
-        # Load the image
-        hiddenFile = Image.open(inputPath)
-        hiddenPix = hiddenFile.load()
-        extractedFile = Image.new("RGB",(self.N,self.N),"white")
-        extractedPix = extractedFile.load()
+        # Count votes
+        votes = [[[] for _ in range(BIOMETRIC_SIZE)] for _ in range(BIOMETRIC_SIZE)]
 
-        # If file is .jpg go to YCbCr domain
-        if inputPath[-3:] == 'jpg':
-            self.offset = 1
-            self.CHANNELS = 2
-            hiddenFile = hiddenFile.convert('YCbCr')
+        # Rotation function
+        rotateIJ = lambda i,j,orientation:\
+            (i,j) if orientation == 0 \
+            else rotateIJ(j,-i-1,orientation-1)
 
         # Seed the PRG
         random.seed(self.KEY)
 
-        # Check if pixel is within bounds
-        def withinBounds(x,y):
-            return x >= crop[0] and y >= crop[1] and x < crop[2] and y < crop[3] 
-        
-        # Load data hidden in LSB of a channel (RGBA)
-        def getData(x,y,channel):
-            rgba = list(hiddenPix[x,y])
-            val = (rgba[channel] & self.bits) << (8-self.shift)
-            return val
+        # Debug
+        self.table = []
 
-        # One iteration of the stenography
-        def runPass(channel):
-            for i in range(self.N):
-                for j in range(self.N):
-                    x = random.randint(0,hiddenFile.size[0]-1)
-                    y = random.randint(0,hiddenFile.size[1]-1)
-                    #extractedPix[i,j] = getData(x,y,channel)
-                    if withinBounds(x,y):
-                        self.votes[i][j].append(getData(x,y,channel))      
+        # Size of the input image
+        inputSize = [[embedded.shape[0],embedded.shape[1]],
+                     [embedded.shape[1],embedded.shape[0]]]
 
-        # Run multiple passes
+        def runPass(passNumber):
+            channel = passNumber % self.CHANNELS
+            orientation = (passNumber) % 4
+            
+            width = ACTUAL_SIZE[passNumber%2][0] - 1
+            height = ACTUAL_SIZE[passNumber%2][1] - 1
+            
+            for i in range(BIOMETRIC_SIZE):
+                for j in range(BIOMETRIC_SIZE):
+                    # x,y coordinates of original image
+                    x = random.randint(0,height) - CORNERS[orientation][1]
+                    y = random.randint(0,width) - CORNERS[orientation][0]                   
+
+                    if x < 0 or y < 0:
+                        continue
+
+                    # Rotate the coordinates
+                    ni,nj = i,j
+                    nx,ny = rotateIJ(x,y,orientation)                    
+
+                    try:
+                        # Extract the value
+                        value = embedded[nx,ny,channel] & self.MASK            
+
+                        # Add votes to the list
+                        votes[ni][nj].append(value << self.SHIFT)
+                    except:
+                        #print(nx,ny)
+                        pass
+
+                    # Debug
+                    if i == 64 and passNumber == 3 and self.logging:
+                        row = [passNumber,ni,nj,nx,ny,value]
+                        self.table.append(row)                
+
         for i in range(self.NUMBER_OF_PASSES):
-            runPass(i % self.CHANNELS)
+            runPass(i)
+     
+        # Output canvas
+        canvas = np.zeros((BIOMETRIC_SIZE,BIOMETRIC_SIZE),dtype=np.uint8) + 255  
 
-        # Resolve a vote
-        def majorityVote(a):
-            if len(a) == 0:
-                return self.BLANK_PIXEL
-            return max(map(lambda val: (a.count(val), val), set(a)))[1]        
-            #return Counter(v).most_common(1)[0][0]
+        # Count votes
+        for i in range(BIOMETRIC_SIZE):
+            for j in range(BIOMETRIC_SIZE):
+                a = votes[i][j]
+                if len(a) == 0:
+                    continue
+                value = max(map(lambda val: (a.count(val), val), set(a)))[1]
+                canvas[i,j] = value
 
-        # Resolve all votes
-        for i in range(self.N):
-            for j in range(self.N):
-                pixel = majorityVote(self.votes[i][j])
-                extractedPix[i,j] = (pixel,)*(self.offset+self.CHANNELS)
+        # Debug logs
+        if self.logging:
+            with open('extract.txt','w') as f:
+                f.write(str(self.table))
+            with open('votes.txt','w') as f:
+                f.write(str(votes))
 
-        # Close files
-        hiddenFile.close()
-        extractedFile.save(outputPath)
-        #extractedFile.show()
-        extractedFile.close()
+        return canvas
 
-if __name__ == '__main__':
-    print('Extractor.py')
+def test():    
+    NUMBER_OF_PASSES = 8
+    inputFile = './out'+str(NUMBER_OF_PASSES)+'.png'
+    
+    ACTUAL_SIZE = [[620,387],[387,620]]
+
+    START_X,END_X = 100,300 # HEIGHT
+    START_Y,END_Y = 100,600 # WIDTH
+
+    # WIDTH - HEIGHT
+    CORNERS = [[START_Y,START_X],
+               [START_X,ACTUAL_SIZE[0][0] - END_Y],
+               [ACTUAL_SIZE[0][0] - END_Y,ACTUAL_SIZE[0][1] - END_X],
+               [ACTUAL_SIZE[0][1] - END_X,START_Y]]
+               
+    print(CORNERS)
+
+    KEY = 1234
+    CHANNELS = 3
+    MASK = 6
+    SHIFT = 5
+    BIOMETRIC_SIZE = 128
+
+    extractor = Extractor(NUMBER_OF_PASSES,KEY,MASK,SHIFT,False)
+    
+    embedded = cv2.imread(inputFile)
+    embedded = embedded[START_X:END_X,START_Y:END_Y]
+    cv2.imshow('cropped',embedded)
+    
+    biometric = extractor.extract(embedded,CORNERS,ACTUAL_SIZE,BIOMETRIC_SIZE)
+    
+    cv2.imwrite('extract.png',biometric)
+    cv2.imshow('extract.png',biometric)
+    
+test()
