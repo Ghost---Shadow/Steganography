@@ -1,61 +1,75 @@
-#!/usr/bin/env python3
-
-from PIL import Image
+import cv2
+import numpy as np
 import random
 
 class Embedder:
-    def __init__(self,passes,key,channels,shift):
+    def __init__(self,passes,key,channels,depth,mask):
         self.NUMBER_OF_PASSES = passes
         self.KEY = key
         self.CHANNELS = channels
-        self.shift = shift
-        self.bits = (1<<self.shift)-1
-        self.offset = 0
+        self.depth = depth
+        self.mask = mask
 
-    def embed(self,biometric,carrier,output):       
-        # Load the carrier and biometric images
-        carrierFile = Image.open(carrier)
-        biometricFile = Image.open(biometric)
-        carrierPix = carrierFile.load()
-        biometricPix = biometricFile.load()
+    def embed(self,biometric,carrier,output):
+        # Load the carrier image
+        carrierImg = cv2.imread(carrier)
 
-        # If file is .jpg go to YCbCr domain
-        if carrier[-3:] == 'jpg':
-            self.offset = 1
-            self.CHANNELS = 2
-            carrierFile = carrierFile.convert('YCbCr')
+        # Load the biometric image
+        biometricImg = cv2.imread(biometric)
+        biometricImg = cv2.cvtColor(biometricImg,cv2.COLOR_BGR2GRAY)
+        biometricX = biometricImg.shape[0]
+        biometricY = biometricImg.shape[1]
 
         # Seed the PRG
-        random.seed(self.KEY)
+        random.seed(KEY)
 
-        # Hide data in LSB of a channel (RGBA) or (YCbCr)
-        def hideData(rgba,val,channel):
-            rgba = list(rgba)
-            rgba[channel] = ((rgba[channel]>>self.bits)<<self.bits) + val
-            return tuple(rgba)
+        def runPass(carrierImg,passNumber):
+            # Select channel to hide data
+            channel = passNumber % CHANNELS
 
-        # One iteration of the stenography
-        def runPass(channel):
-            for i in range(biometricFile.size[0]):
-                for j in range(biometricFile.size[1]):
-                    x = random.randint(0,carrierFile.size[0]-1)
-                    y = random.randint(0,carrierFile.size[1]-1)
-                    carrierPix[x,y] = hideData(carrierPix[x,y],
-                                               biometricPix[i,j][0]>>(8-(self.shift)),
-                                               channel)   
+            # Rotate the carrier image by 90 degrees CCW
+            carrierImg = np.rot90(carrierImg,1)
+            carrierX = carrierImg.shape[0]
+            carrierY = carrierImg.shape[1]
+            
+            for i in range(biometricX):
+                for j in range(biometricY):
+                    x = random.randint(0,carrierX-1)
+                    y = random.randint(0,carrierY-1)
+                    
+                    # Get the n MSBs for the biometric and shift it
+                    # to the second last LSB and onwards
+                    dataToHide = (biometricImg[i,j] >> (8 - self.depth)) << 1
+                    
+                    # Set the bits to 0 where the data is to be hidden
+                    carrierImg[x,y,channel] &= self.mask
 
+                    # Set the bits of the image
+                    carrierImg[x,y,channel] |= dataToHide
 
-        # Run multiple passes
-        for i in range(self.NUMBER_OF_PASSES):
-            runPass(self.offset+i % self.CHANNELS)
+        for i in range(NUMBER_OF_PASSES):
+            runPass(carrierImg,i)
 
-        # Save output
-        carrierFile.save(output)
-        #carrierFile.show()
+        # Reorient the image
+        carrierImg = np.rot90(carrierImg,NUMBER_OF_PASSES%4)
 
-        # Close all open files
-        carrierFile.close()
-        biometricFile.close()
+        #cv2.imshow(output,carrierImg)
+        cv2.imwrite(output,carrierImg)
 
-if __name__ == '__main__':
-    print('Embedder.py')
+def test():
+    KEY = 1234
+    CHANNELS = 3
+    NUMBER_OF_PASSES = 8
+    DEPTH = 2
+    MASK = 249
+
+    carrier = '../Carrier.png'
+    biometric = '../FingerPrint.png'
+    output = './out'+str(NUMBER_OF_PASSES)+'.png'
+
+    embedder = Embedder(NUMBER_OF_PASSES,KEY,CHANNELS,DEPTH,MASK)
+
+    embedder.embed(biometric,carrier,output)
+    
+test()
+
