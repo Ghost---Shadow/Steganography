@@ -88,5 +88,5 @@ def test():
     result = embedder.embed(biometric,carrier)
     cv2.imwrite(output,result)    
     
-test()
+#test()
 

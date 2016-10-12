@@ -125,4 +125,4 @@ def test():
     cv2.imwrite('extract.png',biometric)
     cv2.imshow('extract.png',biometric)
     
-test()
+#test()
