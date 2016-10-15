@@ -11,6 +11,8 @@ class Extractor:
         self.logging = logging
 
     def extract(self,embedded,CORNERS,ACTUAL_SIZE,BIOMETRIC_SIZE):
+        ACTUAL_SIZE = [[ACTUAL_SIZE[1],ACTUAL_SIZE[0]],
+                       [ACTUAL_SIZE[0],ACTUAL_SIZE[1]]]
         # Extract number of channels
         self.CHANNELS = embedded.shape[2]
 
@@ -95,16 +97,16 @@ def test():
     NUMBER_OF_PASSES = 8
     inputFile = './out'+str(NUMBER_OF_PASSES)+'.png'
     
-    ACTUAL_SIZE = [[620,387],[387,620]]
+    ACTUAL_SIZE = [387,620]
 
     START_X,END_X = 100,300 # HEIGHT
     START_Y,END_Y = 100,600 # WIDTH
 
     # WIDTH - HEIGHT
     CORNERS = [[START_Y,START_X],
-               [START_X,ACTUAL_SIZE[0][0] - END_Y],
-               [ACTUAL_SIZE[0][0] - END_Y,ACTUAL_SIZE[0][1] - END_X],
-               [ACTUAL_SIZE[0][1] - END_X,START_Y]]
+               [START_X,ACTUAL_SIZE[1] - END_Y],
+               [ACTUAL_SIZE[1] - END_Y,ACTUAL_SIZE[0] - END_X],
+               [ACTUAL_SIZE[0] - END_X,START_Y]]
                
     print(CORNERS)
 
@@ -118,11 +120,11 @@ def test():
     
     embedded = cv2.imread(inputFile)
     embedded = embedded[START_X:END_X,START_Y:END_Y]
-    cv2.imshow('cropped',embedded)
+    #cv2.imshow('cropped',embedded)
     
     biometric = extractor.extract(embedded,CORNERS,ACTUAL_SIZE,BIOMETRIC_SIZE)
     
-    cv2.imwrite('extract.png',biometric)
+    #cv2.imwrite('extract.png',biometric)
     cv2.imshow('extract.png',biometric)
     
 #test()

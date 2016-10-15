@@ -11,12 +11,12 @@ class Embedder:
         self.MASK = mask
         self.logging = logging
 
-    def embed(self,biometric,carrier):
+    def embed(self,biometricImg,carrierImg):
         # Load the carrier image
-        carrierImg = cv2.imread(carrier)
+        #carrierImg = cv2.imread(carrier)
 
         # Load the biometric image
-        biometricImg = cv2.imread(biometric)
+        #biometricImg = cv2.imread(biometric)
         biometricImg = cv2.cvtColor(biometricImg,cv2.COLOR_BGR2GRAY)
         biometricX = biometricImg.shape[0]
         biometricY = biometricImg.shape[1]
@@ -80,8 +80,8 @@ def test():
     DEPTH = 2
     MASK = 249
 
-    carrier = '../Carrier.png'
-    biometric = '../FingerPrint.png'
+    carrier = cv2.imread('../Carrier.png')
+    biometric = cv2.imread('../FingerPrint.png')
     output = './out'+str(NUMBER_OF_PASSES)+'.png'
 
     embedder = Embedder(NUMBER_OF_PASSES,KEY,CHANNELS,DEPTH,MASK,False)
