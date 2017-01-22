@@ -13,3 +13,4 @@ Python [Pillow](https://pypi.python.org/pypi/Pillow/) is no longer a requirement
 - `Embedder.py` is used for embedding the biometric onto the carrier
 - `Extractor.py` is used for recovering the biometric
 - The `TextTest` folder has the text encoding and decoding scripts along with results
+- `JpgTests` and `LFSR` explore the problems due to lossy compression

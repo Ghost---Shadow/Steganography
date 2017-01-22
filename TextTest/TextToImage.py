@@ -2,27 +2,27 @@ import numpy as np
 import cv2
 import os,re
 
+# Break ASCII to binary, split it in chunks and then bit shift them to MSBs
 def encode(text,depth):
     data = []
     for character in text:
         b = bin(ord(character))[2:]
         while len(b) < 8:
             b = '0' + b
-        #print(int(b,2))
         data.extend([int(b[i:i+depth],2)<<(8-depth) for i in range(0, len(b), depth)])
     return data
 
-
+# Undo encode
 def decode(data,depth):
     s = ""
     for i in range(0,len(data),4):
         b = 0
         for j in range(8//depth):
             b += data[i+j] >> (j * depth)
-        #print(int(bin(b)[2:],2))
         s += chr(b)
     return s
 
+# Repeat the data onto the entire image
 def generateImage(canvas,data):
     counter = 0
     shape = canvas.shape
@@ -34,6 +34,7 @@ def generateImage(canvas,data):
             counter %= dataLen
     return canvas
 
+# Recover the data list from the extracted image
 def getDataFromImage(img,msgLength,depth):
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     dataLength = msgLength * (8//depth)
