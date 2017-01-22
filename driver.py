@@ -2,9 +2,9 @@
 
 import cv2
 
-from mypackage.embedder import Embedder
-from mypackage.extractor import Extractor
-from mypackage.guidelines import GuideLines
+from steganography.embedder import Embedder
+from steganography.extractor import Extractor
+from steganography.guidelines import GuideLines
 
 import random
 import time
@@ -15,7 +15,7 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 CARRIER = "./Carrier.png"
 BIOMETRIC = "./FingerPrint.png"
 EMBEDDED = "./Output.png"
-EXTRACTED = "./Tests_PNG/Test"
+EXTRACTED = "./Tests_PNG_32/"
 
 # Number of channels (RGBA)
 CHANNELS = 3 

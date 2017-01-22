@@ -137,3 +137,7 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Custom
+extract.txt
+votes.txt

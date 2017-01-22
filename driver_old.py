@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from mypackage.embedder import Embedder
-from mypackage.extractor import Extractor
+from steganography.embedder_old import Embedder
+from steganography.extractor_old import Extractor
 
 import random
 import time
